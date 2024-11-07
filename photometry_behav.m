@@ -14,10 +14,10 @@ rewarded_times = [];
 nonrewarded_times = [];
 % divide rewarded times vs nonrewarded times
 for i = 1:length(patch_behav.timestamps)
-    if patch.reward_outcome(i) == 0
-        nonrewarded_times = [nonrewarded_times; patch.timestamps(i)];
+    if patch_behav.reward_outcome(i) == 0
+        nonrewarded_times = [nonrewarded_times; patch_behav.timestamps(i)];
     else
-        rewarded_times = [rewarded_times; patch.timestamps(i)];
+        rewarded_times = [rewarded_times; patch_behav.timestamps(i)];
     end
 end
 

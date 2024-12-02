@@ -146,6 +146,46 @@ end
 fclose(fid);
 
 
+%% Plot
+
+lick_matrix = zeros(num_trials,7);
+
+% fill matrix
+for k = 1:num_trials
+    pt = behavTrials.port(k);
+    if behavTrials.reward_outcome(k) == 1
+        lick_matrix(k, pt) = 2; % rewarded
+    elseif behavTrials.reward_outcome(k) == 0
+        lick_matrix(k, pt) = 1; % not rewarded
+    end
+    % unlicked ports remain 0
+end
+behavTrials.lick_matrix = lick_matrix;
+
+
+patch_licks = zeros(3,1);
+patch_licks(1) = nnz(behavTrials.port == 1) + nnz(behavTrials.port == 2) + nnz(behavTrials.port == 3);
+patch_licks(2) = nnz(behavTrials.port == 4);
+patch_licks(3) = nnz(behavTrials.port == 5) + nnz(behavTrials.port == 6) + nnz(behavTrials.port == 7);
+
+
+figure
+subplot(1,3,[1,2])
+ylabel('Trial #');
+xlabel('Reward Port');
+heatmap(lick_matrix);
+
+subplot(1,3,3)
+title('Distribution of Licks across patches');
+x = ["Patch 0" "Middle port" "Patch 1"];
+bar(x, patch_licks);
+
+if saveMat
+    C = strsplit(pwd,'\');
+    save([basepath filesep C{end} '.TrialBehavior.Behavior.mat'],'behavTrials');
+end
+
+disp('done!');
 
 
 

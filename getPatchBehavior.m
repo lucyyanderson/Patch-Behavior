@@ -214,12 +214,6 @@ for i = 1:length(patch.patch_number)
 end
 
 figure(2)
-subplot(1,3,[1,2])
-ylabel('Trial #');
-xlabel('Reward Port');
-heatmap(lick_matrix);
-
-
 title('Distribution of Licks across patches');
 z = ["Rewarded Patch" "Middle port" "Nonrewarded Patch"];
 bar(z, lick_outcome);

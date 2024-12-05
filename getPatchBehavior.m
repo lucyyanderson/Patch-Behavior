@@ -187,6 +187,44 @@ end
 
 disp('done!');
 
+%% Plot how often they lick in the correct patch
+
+lick_outcome = zeros(3, 1);
+% first row of lick outcome = rewarded patch, second is middle port,
+% third is unrewarded patch
+
+for i = 1:length(patch.patch_number)
+    % determine which patch has higher rewards
+    if patch.patch_number(i) == 0
+        rewarded_ports = [1, 2, 3];
+        nonrewarded_ports = [5, 6, 7];
+    else 
+        rewarded_ports = [5, 6, 7];
+        nonrewarded_ports = [1, 2, 3];
+    end
+
+    % determine if mouse was licking high or low patch
+    if ismember(patch.port(i), rewarded_ports)
+        lick_outcome(1) = lick_outcome(1)+1;
+    elseif ismember(patch.port(i), nonrewarded_ports)
+        lick_outcome(3) = lick_outcome(3)+1;
+    else 
+        lick_outcome(2) = lick_outcome(2)+1;
+    end
+end
+
+figure(2)
+subplot(1,3,[1,2])
+ylabel('Trial #');
+xlabel('Reward Port');
+heatmap(lick_matrix);
+
+
+title('Distribution of Licks across patches');
+z = ["Rewarded Patch" "Middle port" "Nonrewarded Patch"];
+bar(z, lick_outcome);
+
+
 
 
 

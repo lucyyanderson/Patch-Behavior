@@ -8,7 +8,7 @@
 %Returns:
 %   - Matrix with photometry data and timestamps aligned to the ephys data (in s). 
 
-function syncPhotometry = getSyncPhotometry(photometryData, intanData)
+function syncPhotometry = getSyncPhotometry_IZ(photometryData, intanData)
     if nargin < 2
         intanData = 'digitalin.dat'; % default name
     end
@@ -21,8 +21,9 @@ function syncPhotometry = getSyncPhotometry(photometryData, intanData)
     clear m
     Nchan = 16;
     Nchan2 = 17;
-    tester = zeros(length(digital_word2), Nchan);
-    for k = 1:Nchan
+    tester = zeros(length(digital_word2), 1);    
+    digitalChan = 13;
+    for k = Nchan2-digitalChan
         tester(:, Nchan2-k) = (digital_word2 - 2^(Nchan-k)) >= 0;
         digital_word2 = digital_word2 - tester(:, Nchan2-k) * 2^(Nchan-k);
         barcode{Nchan2-k} = tester(:, Nchan2-k) == 1;
@@ -31,29 +32,33 @@ function syncPhotometry = getSyncPhotometry(photometryData, intanData)
     barcodeIntan = barcode{13}; %High/low signal
 
     %Extract barcode data from Pyphotometry preprocessed file
-    load(photometryData);
+    %load(photometryData);
     srPhot = photometryData.sampling_rate; %Get samplingrate
     barcodePhot = photometryData.highLow; %High/low signal
     
-    % Interpolation to match the sampling rate of barcodeIntan (130Hz-->30kHz)
-    tPhot = (0:length(barcodePhot)-1) / double(srPhot); ; % photometry timestamps in s
-    tIntan = (0:length(barcodeIntan)-1) / double(srIntan); % intan timestamps in s
+    % Resample barcodeIntan to match Photometry sampling rate (130 Hz)
+    barcodeIntanResampled = resample(double(barcodeIntan), srPhot, srIntan);
+    tIntanResampled = linspace(0, length(barcodeIntan) / srIntan, length(barcodeIntanResampled));
 
-    barcodePhotInterpolated = interp1(tPhot, double(barcodePhot), tIntan, 'linear', 'extrap');
-    %barcodePhotInterpolated = interp1(tPhot, double(barcodePhot), tIntan, 'neares', 'extrap');
+    tPhot = linspace(0, length(barcodePhot) / double(srPhot), length(barcodePhot));
 
-    % Cross correlation
-    [xcorrValues, lags] = xcorr(double(barcodeIntan), barcodePhotInterpolated);
+    % Compute cross-correlation
+    [xcorrValues, lags] = xcorr(double(barcodeIntanResampled), double(barcodePhot));
     [maxCorr, maxCorrIndex] = max(xcorrValues);
-    maxLag = lags(maxCorrIndex); %lag between signals with higher correlation
-
-    %Get sync photometry timestamps at 30kHz
-    photTimestampsSr = (maxLag:length(barcodePhotInterpolated) + maxLag-1)'; % shiftet timestamps
-    tPhotUs = photTimestampsSr/ srIntan;
+    maxLag = lags(maxCorrIndex); % Lag in samples at 130 Hz
     
-    %Downsample back to 130Hz
-    tPhotDs = tPhot + (maxLag/srIntan);
-    dsTimestamps = interp1(tPhotUs, photTimestampsSr, tPhotDs, 'linear', 'extrap');
-    dsTimestampsSec = dsTimestamps/double(srIntan); %in s
-    syncPhotometry = [dsTimestampsSec', photometryData.dlight'];
+    % Compute time shift
+    timeShift = maxLag / double(srPhot); % Convert lag to time (seconds)
+
+    %Shift photometry signal to match intan timestamps
+    tPhotDs = tPhot + timeShift ;
+    syncPhotometry.sampling_rate = photometryData.sampling_rate;
+    syncPhotometry.barcodesOn = photometryData.barcodesOn;
+    syncPhotometry.barcodesOnOff = photometryData.barcodesOnOff;
+    syncPhotometry.highLow = photometryData.highLow;
+    syncPhotometry.timestamps = tPhotDs';
+    syncPhotometry.grabDA_z = photometryData.grabDA_z';
+    syncPhotometry.grabDA_df = photometryData.grabDA_df';
+    syncPhotometry.grabDA_raw = photometryData.grabDA_raw';
+    %syncPhotometry = [dsTimestampsSec', photometryData.grabDA_z']; % can make z score or df/f
 end

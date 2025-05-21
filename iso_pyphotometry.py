@@ -2,6 +2,7 @@
 # For analyzing pyphotometry data. Similar to pyphotometry_preprocessing.py, but plots fewer things 
 # and uses the pyphotometry function preprocess_data. 
 
+
 import os
 import numpy as  np
 import matplotlib.pyplot as plt
@@ -14,17 +15,20 @@ import scipy
 from data_import import import_ppd, preprocess_data
 
 #data_folder = r'\\research-cifs.nyumc.org\research\buzsakilab\Buzsakilabspace\LabShare\ZutshiI\patchTask\test_random_pulses'
-data_folder = '/Volumes/buzsakilab/Buzsakilabspace/LabShare/ZutshiI/patchTask/N7/N7_241017_sess2/N7_241017_092921'
-file = 'N7_hippocampus-2024-10-17-092925' #  N11_HPC-2025-02-24-154928 N11_striatum-2025-02-24-153350
+data_folder = r'\\research-cifs.nyumc.org\research\buzsakilab\Buzsakilabspace\LabShare\ZutshiI\patchTask\N14\N14_250519_170548' 
+file = 'N14_striatum-2025-05-19-170555' 
 data_filename = file + '.ppd'
 data = import_ppd(os.path.join(data_folder, data_filename))   #, low_pass=20, high_pass=0.001)
 grabDA_raw = data['analog_1'] # green 
 cherry_raw = data['analog_2'] # red
-barcode = data['digital_1'] 
 time_seconds = data['time']/1000
 sampling_rate = data['sampling_rate']
 time = data['time']
 
+# for stim
+pulse_times_1 = data['pulse_times_1']
+stim_time = data['digital_1']
+barcode = data['digital_2'] 
 
 
 
@@ -159,20 +163,19 @@ grabDA_zscored = (grabDA_corrected-np.mean(grabDA_corrected))/np.std(grabDA_corr
 
 #%% SAVE DATA IN MATLAB FORMAT
 
-save_folder = '/Users/lucyanderson/Library/Mobile Documents/com~apple~CloudDocs/Buzsaki/pyphotometry/N7/clean'
-
 preprocessed_data['grabDA_z'] = grabDA_zscored 
 preprocessed_data['grabDA_df'] = grabDA_dF_F
 preprocessed_data['grabDA_raw'] = grabDA_raw
-#scipy.io.savemat(os.path.join(data_folder, f'{file}_photometry.mat'), {'photometryData': preprocessed_data})
-scipy.io.savemat(os.path.join(save_folder, f'{file}_photometry.mat'), {'photometryData': preprocessed_data})
+preprocessed_data['pulse_times'] = pulse_times_1
+preprocessed_data['stim_time'] = stim_time
+scipy.io.savemat(os.path.join(data_folder, f'{file}_photometry.mat'), {'photometryData': preprocessed_data})
 
 
 
 
 # photometry around stim
 
-'''
+
 #%% Plot signal at pulse times
 
 time_step = 1000 / sampling_rate  # Time step in ms
@@ -215,4 +218,4 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
-'''
+
